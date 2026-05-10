@@ -1,0 +1,52 @@
+# macOS system files
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.com.apple.metadata:*
+
+## Temporary/backup files (general)
+
+*~
+*.bak
+*.tmp
+*.old
+*.swp
+*.swo
+*.swn
+*.asd
+*.orig
+
+## Word/Excel temp files
+
+~$*
+*.wbk         # Word backup
+*.xlk         # Excel backup
+*.tmp         # Office temp
+*.lock        # File lock indicators
+
+## Affinity autosave/backup (safe to ignore)
+
+*.autosave
+*.afdesign-preview
+*.afphoto-preview
+*.afpub-preview
+
+## Template files
+# These lines are commented out by default, meaning the template files
+# (.tex, .lua, .yaml, .sh) ARE tracked by Git.
+#
+# If you want to keep the template files OUT of your content repo (e.g.,
+# you installed them globally or share them across projects), uncomment
+# the lines below:
+
+# *.tex
+# *.lua
+# *.yaml
+# *.sh

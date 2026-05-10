@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown → Medium</title>
+
+<!--
+  SECURITY: Both <script> tags carry an `integrity` (SRI) attribute. The browser
+  will refuse to execute the file if jsDelivr ever serves tampered bytes.
+  Hashes below are SHA-384, computed from the canonical npm tarball contents
+  (marked@9.1.6 and dompurify@3.4.2). jsDelivr serves npm files unmodified, so
+  these match what the browser actually receives.
+
+  If you ever upgrade either library, regenerate the hash:
+    curl -fsSL <url> | openssl dgst -sha384 -binary | openssl base64 -A
+  then prefix `sha384-` to the result.
+-->
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"
+        integrity="sha384-odPBjvtXVM/5hOYIr3A1dB+flh0c3wAT3bSesIOqEGmyUA4JoKf/YTWy0XKOYAY7"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.2/dist/purify.min.js"
+        integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #fafaf8;
+    --bg-2:     #f2f1ee;
+    --bg-3:     #e8e7e3;
+    --text:     #1a1917;
+    --text-2:   #5a5955;
+    --text-3:   #9a9894;
+    --border:   rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.18);
+    --accent:   #1a8a6e;
+    --accent-bg:#e8f5f1;
+    --warn-bg:  #fff8e6;
+    --warn-text:#7a5c00;
+    --warn-bdr: rgba(180,130,0,0.25);
+    --err-text: #c0392b;
+    --mono:     'Menlo', 'Consolas', 'Liberation Mono', monospace;
+    --serif:    'Georgia', 'Times New Roman', serif;
+    --sans:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:       #1c1b19;
+      --bg-2:     #252420;
+      --bg-3:     #2e2d29;
+      --text:     #e8e6e0;
+      --text-2:   #a09d97;
+      --text-3:   #6a6864;
+      --border:   rgba(255,255,255,0.09);
+      --border-2: rgba(255,255,255,0.16);
+      --accent:   #3ab893;
+      --accent-bg:#0e2e26;
+      --warn-bg:  #2a2210;
+      --warn-text:#d4a030;
+      --warn-bdr: rgba(180,130,0,0.3);
+      --err-text: #e05c50;
+    }
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+
+  .toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    color: var(--text);
+  }
+
+  .brand-icon {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { display: block; }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab-group {
+    display: flex;
+    border: 1px solid var(--border-2);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .tab {
+    font-size: 12px;
+    font-family: var(--sans);
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .tab + .tab { border-left: 1px solid var(--border-2); }
+  .tab:hover { background: var(--bg-2); }
+  .tab.active { background: var(--bg-2); color: var(--text); font-weight: 500; }
+
+  .copy-btn {
+    font-size: 13px;
+    font-family: var(--sans);
+    font-weight: 500;
+    padding: 6px 16px;
+    border: 1px solid var(--border-2);
+    border-radius: 7px;
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background .12s, border-color .12s, color .12s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--bg-2); }
+  .copy-btn.ok { color: var(--accent); border-color: var(--accent); }
+  .copy-btn.fail { color: var(--err-text); }
+
+  /* ── Main panes ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .pane + .pane { border-left: 1px solid var(--border); }
+
+  .pane-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: 7px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #md-input {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    background: transparent;
+    color: var(--text);
+    tab-size: 2;
+  }
+
+  .preview-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px 40px;
+  }
+
+  /* ── Preview typography ── */
+  .preview-content {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--text);
+    max-width: 640px;
+  }
+
+  .preview-content h1 { font-size: 28px; font-weight: 700; line-height: 1.2; margin: 0 0 18px; }
+  .preview-content h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 28px 0 12px; }
+  .preview-content h3 { font-size: 18px; font-weight: 600; line-height: 1.35; margin: 22px 0 10px; }
+  .preview-content h4,
+  .preview-content h5,
+  .preview-content h6 {
+    font-size: 17px; font-weight: 600; margin: 20px 0 8px;
+    position: relative;
+  }
+  .preview-content h4::after,
+  .preview-content h5::after,
+  .preview-content h6::after {
+    content: ' ↘ H3 in Medium';
+    font-size: 10px;
+    font-family: var(--sans);
+    font-weight: 400;
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .preview-content p { margin: 0 0 14px; }
+  .preview-content ul, .preview-content ol { margin: 0 0 14px; padding-left: 24px; }
+  .preview-content li { margin-bottom: 5px; }
+
+  .preview-content a { color: var(--accent); text-decoration: underline; }
+
+  .preview-content blockquote {
+    border-left: 3px solid var(--border-2);
+    margin: 16px 0;
+    padding: 4px 16px;
+    color: var(--text-2);
+    font-style: italic;
+  }
+
+  .preview-content pre {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+  }
+  .preview-content pre code { font-family: var(--mono); font-size: 12px; background: none; padding: 0; }
+  .preview-content p code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--bg-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .preview-content img {
+    max-width: 100%;
+    border-radius: 7px;
+    margin: 8px 0;
+    display: block;
+  }
+
+  .preview-content hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  .preview-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-family: var(--sans);
+  }
+  .preview-content th, .preview-content td {
+    border: 1px solid var(--border-2);
+    padding: 7px 12px;
+    text-align: left;
+  }
+  .preview-content th { background: var(--bg-2); font-weight: 600; }
+
+  .table-warn {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-bdr);
+    border-radius: 5px;
+    padding: 2px 8px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  /* ── Footer warnings ── */
+  .footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+
+  .warn-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+
+  .chip {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    border: 1px solid var(--warn-bdr);
+    font-family: var(--sans);
+  }
+
+  .word-count {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--sans);
+    white-space: nowrap;
+  }
+
+  /* ── Fallback modal ── */
+  #fallback-area {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #fallback-area.visible { display: flex; }
+  .fallback-box {
+    background: var(--bg);
+    border: 1px solid var(--border-2);
+    border-radius: 10px;
+    padding: 20px;
+    width: min(560px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .fallback-box h2 { font-size: 15px; font-weight: 600; }
+  .fallback-box p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+  .fallback-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fallback-btn {
+    font-size: 13px;
+    font-family: var(--sans);
+    font-weight: 500;
+    padding: 7px 14px;
+    border: 1px solid var(--border-2);
+    border-radius: 7px;
+    background: var(--bg-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .fallback-btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .fallback-box textarea {
+    width: 100%;
+    height: 140px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border-2);
+    border-radius: 7px;
+    resize: vertical;
+    color: var(--text);
+    outline: none;
+    display: none;
+  }
+  .fallback-box textarea.visible { display: block; }
+  .fallback-close {
+    align-self: flex-end;
+    font-size: 13px;
+    font-family: var(--sans);
+    padding: 6px 14px;
+    border: 1px solid var(--border-2);
+    border-radius: 7px;
+    background: var(--bg-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="toolbar">
+    <div class="toolbar-brand">
+      <div class="brand-icon">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 3h9M2 6.5h6M2 10h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      Markdown → Medium
+    </div>
+
+    <div class="toolbar-actions">
+      <div class="tab-group" role="group" aria-label="View mode">
+        <button class="tab active" id="tab-split" onclick="setLayout('split')">Split</button>
+        <button class="tab" id="tab-editor" onclick="setLayout('editor')">Editor</button>
+        <button class="tab" id="tab-preview" onclick="setLayout('preview')">Preview</button>
+      </div>
+      <button class="copy-btn" id="copy-btn" onclick="copyForMedium()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy for Medium
+      </button>
+    </div>
+  </div>
+
+  <div class="main" id="main">
+    <div class="pane" id="pane-editor">
+      <div class="pane-label">Markdown</div>
+      <textarea id="md-input" spellcheck="false" aria-label="Markdown input" placeholder="Paste or type your Markdown here…"></textarea>
+    </div>
+
+    <div class="pane" id="pane-preview">
+      <div class="pane-label">
+        <span>Rendered preview</span>
+        <span class="word-count" id="word-count"></span>
+      </div>
+      <div class="preview-scroll">
+        <div class="preview-content" id="preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="warn-chips" id="warn-chips"></div>
+  </div>
+</div>
+
+<!-- Fallback modal: opens when both clipboard paths fail. -->
+<div id="fallback-area" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+  <div class="fallback-box">
+    <h2 id="fb-title">Clipboard access blocked</h2>
+    <p>Your browser blocked the clipboard write. The most reliable recovery is to open the rendered output in a new tab, then select all and copy from there — Medium will accept that as rich text.</p>
+    <div class="fallback-actions">
+      <button class="fallback-btn primary" onclick="openRenderedInNewTab()">Open rendered HTML in new tab</button>
+      <button class="fallback-btn" onclick="toggleRawHtml()">Show raw HTML</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-3)">Raw HTML source is for debugging only — pasting it directly into Medium's editor will paste as plain text, not rich content.</p>
+    <textarea id="fallback-html" readonly onclick="this.select()"></textarea>
+    <button class="fallback-close" onclick="closeFallback()">Close</button>
+  </div>
+</div>
+
+<script>
+const SAMPLE = `# The Article Title Goes Here
+
+An opening paragraph with **bold text**, *italics*, and a [hyperlink](https://example.com). Medium handles these cleanly.
+
+## A Second-Level Heading
+
+Here's a blockquote:
+
+> "The best way to predict the future is to invent it." — Alan Kay
+
+### Third-Level Heading
+
+Inline \`code\` and a fenced block:
+
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+## Lists
+
+Unordered:
+
+- Item one
+- Item two
+  - Nested item
+- Item three
+
+Ordered:
+
+1. First step
+2. Second step
+3. Third step
+
+## Images
+
+Images must be publicly hosted URLs — Medium fetches them by URL.
+
+![A sample image](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bikesgray.jpg/480px-Bikesgray.jpg)
+
+## Tables (⚠ Medium strips formatting)
+
+| Column A | Column B | Column C |
+|----------|----------|----------|
+| Value 1  | Value 2  | Value 3  |
+| Value 4  | Value 5  | Value 6  |
+
+---
+
+That's it. Paste this into Medium and it should carry over heading structure, bold/italic, links, images, code blocks, and lists.
+`;
+
+// ── State ──
+const mdInput    = document.getElementById('md-input');
+const previewEl  = document.getElementById('preview');
+const chipsEl    = document.getElementById('warn-chips');
+const wordCount  = document.getElementById('word-count');
+const copyBtn    = document.getElementById('copy-btn');
+
+mdInput.value = SAMPLE;
+
+// ── Marked config ──
+marked.setOptions({ gfm: true, breaks: false });
+
+// ── Sanitize wrapper ──
+// Marked 5+ removed built-in HTML sanitization. We pipe everything through
+// DOMPurify so embedded <script>, on*= handlers, javascript: URLs, etc. are
+// stripped before they touch the DOM. This matters even for a single-user tool:
+// markdown copied from a hostile source could carry a script payload that
+// would otherwise execute in the file:// origin (network egress, clipboard
+// reads, fake UI for phishing).
+function safeRender(md) {
+  return DOMPurify.sanitize(marked.parse(md));
+}
+
+// ── Render ──
+function render() {
+  const md = mdInput.value;
+  previewEl.innerHTML = safeRender(md);
+
+  // Insert table warnings in preview
+  previewEl.querySelectorAll('table').forEach(tbl => {
+    const w = document.createElement('p');
+    w.className = 'table-warn';
+    w.textContent = '⚠ Table — Medium will strip formatting. Rewrite as a list or image.';
+    tbl.after(w);
+  });
+
+  updateChips(md);
+  updateWordCount();
+}
+
+// Word count is now derived from the rendered text, so markdown syntax
+// characters (#, **, -, etc.) don't inflate the number.
+function updateWordCount() {
+  const text = (previewEl.textContent || '').trim();
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  wordCount.textContent = words > 0 ? `${words.toLocaleString()} words` : '';
+}
+
+function updateChips(md) {
+  const issues = [];
+  if (/^\|.+\|/m.test(md))
+    issues.push('Tables → plain text in Medium');
+  if (/^#{4,6} /m.test(md))
+    issues.push('H4–H6 → collapsed to H3');
+  if (/!\[.*?\]\((?!https?:\/\/)[^)]+\)/m.test(md))
+    issues.push('Local image paths won\'t display');
+  if (/<[a-z][^>]*>/i.test(md))
+    issues.push('Raw HTML tags are stripped');
+  // Issue strings are hardcoded so innerHTML is safe here, but use textContent
+  // via DOM construction to keep the pattern resistant to future edits.
+  chipsEl.replaceChildren(...issues.map(t => {
+    const span = document.createElement('span');
+    span.className = 'chip';
+    span.textContent = t;
+    return span;
+  }));
+}
+
+// ── Transform for Medium clipboard ──
+function buildMediumHtml(md) {
+  // Sanitize FIRST, then transform. After DOMPurify, headings and tables
+  // are still valid HTML so the H4→H3 and table→note rewrites work normally.
+  const raw = DOMPurify.sanitize(marked.parse(md));
+  const div = document.createElement('div');
+  div.innerHTML = raw;
+
+  // H4-H6 → H3
+  div.querySelectorAll('h4,h5,h6').forEach(el => {
+    const h3 = document.createElement('h3');
+    h3.innerHTML = el.innerHTML;
+    el.replaceWith(h3);
+  });
+
+  // Tables → explanatory line
+  div.querySelectorAll('table').forEach(tbl => {
+    const p = document.createElement('p');
+    p.textContent = '[Table not shown — Medium does not support table formatting. Consider rewriting as a list.]';
+    tbl.replaceWith(p);
+  });
+
+  return div.innerHTML;
+}
+
+// ── Copy ──
+async function copyForMedium() {
+  const md = mdInput.value.trim();
+  if (!md) { flashBtn('Nothing to copy', 'fail'); return; }
+
+  const mediumHtml = buildMediumHtml(md);
+
+  // Path 1: modern Clipboard API with rich HTML
+  if (navigator.clipboard && typeof window.ClipboardItem === 'function') {
+    try {
+      const blob = new Blob([mediumHtml], { type: 'text/html' });
+      const item = new ClipboardItem({ 'text/html': blob });
+      await navigator.clipboard.write([item]);
+      flashBtn('Copied!', 'ok');
+      return;
+    } catch (e) { /* fall through to legacy path */ }
+  }
+
+  // Path 2: legacy execCommand on a hidden contentEditable. This puts rich
+  // text on the clipboard (not source HTML), which is what Medium needs.
+  if (copyRichTextLegacy(mediumHtml)) {
+    flashBtn('Copied!', 'ok');
+    return;
+  }
+
+  // Path 3: open the modal with a working recovery option (new-tab render)
+  // and a fallback raw-HTML view for debugging.
+  showFallback(mediumHtml);
+  flashBtn('Clipboard blocked — see options', 'fail');
+}
+
+function copyRichTextLegacy(html) {
+  const ghost = document.createElement('div');
+  ghost.contentEditable = 'true';
+  ghost.innerHTML = html;
+  ghost.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+  document.body.appendChild(ghost);
+
+  const range = document.createRange();
+  range.selectNodeContents(ghost);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+
+  sel.removeAllRanges();
+  ghost.remove();
+  return ok;
+}
+
+function showFallback(html) {
+  const area = document.getElementById('fallback-area');
+  area.dataset.html = html;
+  document.getElementById('fallback-html').value = html;
+  document.getElementById('fallback-html').classList.remove('visible');
+  area.classList.add('visible');
+}
+
+function toggleRawHtml() {
+  document.getElementById('fallback-html').classList.toggle('visible');
+}
+
+function openRenderedInNewTab() {
+  const html = document.getElementById('fallback-area').dataset.html || '';
+  const wrapper = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Rendered output — select all and copy</title>
+<style>
+  body { font-family: Georgia, 'Times New Roman', serif; max-width: 680px;
+         margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #1a1917; }
+  .hint { background: #fff8e6; border: 1px solid rgba(180,130,0,0.25);
+          padding: 10px 14px; border-radius: 6px;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          font-size: 13px; color: #7a5c00; margin-bottom: 24px; }
+  pre { background: #f2f1ee; padding: 12px; border-radius: 6px; overflow-x: auto; }
+  img { max-width: 100%; }
+</style></head><body>
+<div class="hint">Press <strong>Cmd/Ctrl+A</strong> to select everything, then <strong>Cmd/Ctrl+C</strong> to copy. Paste into Medium.</div>
+${html}
+</body></html>`;
+  const blob = new Blob([wrapper], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) {
+    // Popup blocked — keep the modal open so the raw-HTML option is still reachable.
+    alert('Popup blocked. Allow popups for this page, or use "Show raw HTML" below.');
+    return;
+  }
+  // Revoke after a delay so the new tab has time to load.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  closeFallback();
+}
+
+function closeFallback() {
+  document.getElementById('fallback-area').classList.remove('visible');
+  copyBtn.innerHTML = copyBtnHTML();
+  copyBtn.className = 'copy-btn';
+}
+
+function copyBtnHTML() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy for Medium`;
+}
+
+function flashBtn(label, cls) {
+  copyBtn.textContent = label;
+  copyBtn.className = `copy-btn ${cls}`;
+  setTimeout(() => {
+    copyBtn.innerHTML = copyBtnHTML();
+    copyBtn.className = 'copy-btn';
+  }, 2600);
+}
+
+// ── Layout ──
+function setLayout(mode) {
+  const ed = document.getElementById('pane-editor');
+  const pv = document.getElementById('pane-preview');
+  ['split','editor','preview'].forEach(id =>
+    document.getElementById(`tab-${id}`).className = 'tab' + (id === mode ? ' active' : '')
+  );
+  ed.style.display = (mode === 'preview') ? 'none' : 'flex';
+  pv.style.display = (mode === 'editor')  ? 'none' : 'flex';
+}
+
+// ── Debounced live render ──
+let debounce;
+mdInput.addEventListener('input', () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(render, 220);
+});
+
+// ── Synced scrolling ──
+// Proportional sync: whichever pane the user scrolls drives the other to the
+// same fractional position. This won't perfectly align headings with their
+// rendered counterparts (the editor and preview have different content
+// heights), but it's close enough for most documents and costs ~15 lines.
+// A `syncing` flag breaks the feedback loop that would otherwise occur when
+// scrolling B fires B's scroll event and tries to scroll A back.
+const previewScroller = document.querySelector('.preview-scroll');
+let syncing = false;
+
+function syncScroll(src, dst) {
+  if (syncing) return;
+  const srcMax = src.scrollHeight - src.clientHeight;
+  const dstMax = dst.scrollHeight - dst.clientHeight;
+  if (srcMax <= 0 || dstMax <= 0) return; // nothing to sync to
+  syncing = true;
+  dst.scrollTop = (src.scrollTop / srcMax) * dstMax;
+  requestAnimationFrame(() => { syncing = false; });
+}
+
+mdInput.addEventListener('scroll', () => syncScroll(mdInput, previewScroller));
+previewScroller.addEventListener('scroll', () => syncScroll(previewScroller, mdInput));
+
+// Close fallback on backdrop click
+document.getElementById('fallback-area').addEventListener('click', function(e) {
+  if (e.target === this) closeFallback();
+});
+
+// Keyboard shortcut: Cmd/Ctrl+Shift+C to copy.
+// Note: this overrides Chrome/Firefox's "inspect element" shortcut while this
+// page has focus. Skip during IME composition.
+document.addEventListener('keydown', e => {
+  if (e.isComposing) return;
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+    e.preventDefault();
+    copyForMedium();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
