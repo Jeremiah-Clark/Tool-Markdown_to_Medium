@@ -582,6 +582,8 @@ function updateChips(md) {
     issues.push('Tables → plain text in Medium');
   if (/^#{4,6} /m.test(md))
     issues.push('H4–H6 → collapsed to H3');
+  if (/^([ \t]{2,})([-*+]|\d+[.)]) /m.test(md))
+    issues.push('Nested lists → flattened to one level by Medium');
   if (/!\[.*?\]\((?!https?:\/\/)[^)]+\)/m.test(md))
     issues.push('Local image paths won\'t display');
   if (/<[a-z][^>]*>/i.test(md))
@@ -617,6 +619,53 @@ function buildMediumHtml(md) {
     p.textContent = '[Table not shown — Medium does not support table formatting. Consider rewriting as a list.]';
     tbl.replaceWith(p);
   });
+
+  // Blockquotes: marked's output has whitespace text nodes between the
+  // <blockquote> opening tag, the inner <p>s, and the closing tag. Medium's
+  // paste handler reads those as empty quote lines, producing visible gaps
+  // above and below your text. Multi-paragraph blockquotes get the same
+  // treatment for each inner <p>. Fix: rebuild every blockquote with a single
+  // clean <p> containing the merged content (<br><br> between segments where
+  // there were originally multiple paragraphs). replaceChildren scrubs the
+  // whitespace text nodes as a side effect.
+  div.querySelectorAll('blockquote').forEach(bq => {
+    const ps = Array.from(bq.querySelectorAll(':scope > p'));
+    if (ps.length === 0) return;
+    const merged = document.createElement('p');
+    ps.forEach((p, i) => {
+      if (i > 0) {
+        merged.appendChild(document.createElement('br'));
+        merged.appendChild(document.createElement('br'));
+      }
+      while (p.firstChild) merged.appendChild(p.firstChild);
+    });
+    bq.replaceChildren(merged);
+  });
+
+  // Strip whitespace-only text nodes from between block-level elements.
+  // Marked pretty-prints its output with newlines between top-level blocks;
+  // those become whitespace text nodes in the DOM and survive serialization
+  // back through innerHTML. Medium's paste handler reads each one as an empty
+  // paragraph block — which is why a paste used to drop a "graf--empty" ghost
+  // <blockquote> in immediately after a real blockquote (visible in DevTools
+  // as the cause of the trailing gap inside the quote bar).
+  // The set is intentionally conservative: only elements whose children are
+  // guaranteed to be other blocks. Inside <p>, <li>, <td>, headings, the
+  // whitespace between inline elements like <em> and <a> is meaningful.
+  const BLOCK_CONTAINERS = new Set([
+    'DIV','BLOCKQUOTE','UL','OL','TABLE','THEAD','TBODY','TR',
+    'ARTICLE','SECTION','HEADER','FOOTER','MAIN','ASIDE','FIGURE'
+  ]);
+  (function stripBlockWhitespace(el) {
+    if (BLOCK_CONTAINERS.has(el.tagName)) {
+      Array.from(el.childNodes).forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()) {
+          node.remove();
+        }
+      });
+    }
+    Array.from(el.children).forEach(stripBlockWhitespace);
+  })(div);
 
   return div.innerHTML;
 }

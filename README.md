@@ -49,14 +49,16 @@ The bottom-bar chips warn you when these appear in your draft:
 
 - **H4–H6 headings** get auto-collapsed to H3 in the copy. Medium doesn't support deeper levels.
 - **Tables** are replaced with a placeholder line. Medium strips table formatting entirely. Rewrite as a list, or capture the table as an image.
+- **Nested lists** get flattened to a single level by Medium on paste. This is a Medium platform limitation, not something the tool can fix. If you need a visual hierarchy, the common workaround is to use `Shift+Enter` and an em dash inside Medium's editor after pasting.
+- **Empty line after blockquotes** — Medium's editor inserts an empty quote line immediately after every blockquote on paste. This is a Medium platform behavior, not something the tool can prevent. After pasting, click into the empty line and press Backspace once to remove it.
 - **Local image paths** like `![alt](image.png)` won't display. Upload the image somewhere public first, then link to the URL.
 - **Raw HTML tags** in your markdown are stripped during sanitization. Medium would ignore them anyway.
 
 ## If the copy button fails
 
-Some browsers block clipboard writes on `file://` pages. If that happens, a modal opens with two options:
+Some browsers block clipboard writes on `file://` pages. If that happens, a popup will appear in the middle of the screen with two buttons:
 
-- **Open rendered HTML in new tab** *(recommended)* — opens a clean rendered page in a new tab. Select all, copy, paste into Medium as normal.
+- **Open rendered HTML in new tab** *(recommended)* — click this. A new browser tab opens with your article rendered cleanly. Press Cmd/Ctrl+A to select all, Cmd/Ctrl+C to copy, then switch to Medium and paste as normal.
 - **Show raw HTML** — for debugging only. Pasting raw HTML source into Medium gives you plain text, not rich content.
 
 ## A few things worth knowing
