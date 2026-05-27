@@ -1,8 +1,9 @@
 # “Markdown → Medium” Tool
 
-> **TL;DR**: Download the **Markdown_to_Medium.zip** file, unpack it into a single folder. Open the **md-to-medium.html** file in a web browser, paste your markdown-formatted text into the left editor pane. Click the "Copy for Medium" button, then paste into the Medium editor.
-
 Moving Markdown text into Medium can be a tedious process. Medium uses a bespoke What You See Is What You Get (WYSIWYG) editor that doesn’t translate Markdown syntax. After manually reformatting my first Medium post, I decided there had to be a better way. With LLM assistance, I created **Markdown → Medium**, which I am offering for free.
+
+> **TL;DR**:  
+> Download the **Markdown_to_Medium.zip** file, unpack it into a single folder. Open the **md-to-medium.html** file in a web browser. Paste your Markdown-formatted text into the left editor pane. Click the "Copy for Medium" button, then paste into the Medium editor.
 
 ## What It Is
 
