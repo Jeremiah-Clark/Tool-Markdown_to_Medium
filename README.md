@@ -1,5 +1,7 @@
 # “Markdown → Medium” Tool
 
+> **TL;DR**: Download the **Markdown_to_Medium.zip** file, unpack it into a single folder. Open the **md-to-medium.html** file in a web browser, paste your markdown-formatted text into the left editor pane. Click the "Copy for Medium" button, then paste into the Medium editor.
+
 Moving Markdown text into Medium can be a tedious process. Medium uses a bespoke What You See Is What You Get (WYSIWYG) editor that doesn’t translate Markdown syntax. After manually reformatting my first Medium post, I decided there had to be a better way. With LLM assistance, I created **Markdown → Medium**, which I am offering for free.
 
 ## What It Is
@@ -8,15 +10,17 @@ Markdown → Medium is a simple tool for converting Markdown files to a format t
 
 ## Requirements
 
-**The tool consists of three files**; all three files must be saved in the same folder to function:
+### The Tool Consists of Three Files
+
+All three files must be saved in the same folder to function:
 
 - marked.min.js
 - md-to-medium.html
 - purify.min.js
 
-Download all three files (or the **Markdown_to_Medium.zip** file) into the same folder.
+The **Markdown_to_Medium.zip** file contains these three files, plus a PDF of this README.
 
-**Markdown → Medium runs in a web browser**: 
+### Markdown → Medium Runs in a Web Browser
 
 - *Chrome* browsers work most reliably. I recommend *[Brave](https://brave.com/download/)* (`brew install --cask brave-browser`) or *[Ungoogled Chromium](https://ungoogled-software.github.io/ungoogled-chromium-binaries/)* (`brew install --cask ungoogled-chromium`).
 - *Safari* and *Firefox* both work in my testing. I currently use *[Zen](https://zen-browser.app/download/)* (`brew install --cask zen`). If you have trouble using either Firefox or Safari, try a *Chrome-based* browser.
@@ -27,10 +31,10 @@ Download all three files (or the **Markdown_to_Medium.zip** file) into the same 
 
 ## Workflow
 
-1. Open **md-to-medium.html** in a web browser.
-2. Copy the plaintext Markdown from your editor and paste it into the left Editor pane.
-3. **Warning Badges** appear inline in the Preview pane to alert you when unsupported elements are changed (see “Limitations” below). **Warning Flags** in the bottom bar collect all Warning Badges in one place for reference.
-4. Once you have reviewed any warnings and made any necessary changes, click the “**Copy for Medium**” button to copy the result to the clipboard.
+1. Open **md-to-medium.html** in a web browser. 
+2. Copy the plaintext Markdown from your editor and paste it into the left Editor pane. 
+3. **Warning Badges** appear inline in the Preview pane to alert you when unsupported elements are changed (see “Limitations” below). **Warning Flags** in the bottom bar collect all Warning Badges in one place for reference. 
+4. Once you have reviewed any warnings and made any necessary changes, click the “**Copy for Medium**” output button to copy the result to the clipboard. 
 5. Paste (`Cmd/Ctrl+v`) into Medium’s editor. Warning Badges do not carry over, but local image placeholders will show in the editor to make replacing them easier.
 
 ## Limitations
