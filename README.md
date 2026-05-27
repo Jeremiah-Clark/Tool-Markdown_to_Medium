@@ -65,3 +65,7 @@ The following features are not supported by the Medium editor:
 - The tool automatically sanitizes JavaScript, event handlers, and other potentially unsafe elements.
 - The word count is based on the rendered text; it does not count the Markdown syntax.
 - The reading time is based on an average reading speed of 265 words per minute.
+
+## License
+
+Markdown → Medium is released under an MIT license. It is free to use, modify, and distribute. I make no guarantees or warranties.
