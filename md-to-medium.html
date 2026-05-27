@@ -5,25 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Markdown → Medium</title>
 
-<!--
-  SECURITY: Both <script> tags carry an `integrity` (SRI) attribute. The browser
-  will refuse to execute the file if jsDelivr ever serves tampered bytes.
-  Hashes below are SHA-384, computed from the canonical npm tarball contents
-  (marked@9.1.6 and dompurify@3.4.2). jsDelivr serves npm files unmodified, so
-  these match what the browser actually receives.
-
-  If you ever upgrade either library, regenerate the hash:
-    curl -fsSL <url> | openssl dgst -sha384 -binary | openssl base64 -A
-  then prefix `sha384-` to the result.
--->
-<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"
-        integrity="sha384-odPBjvtXVM/5hOYIr3A1dB+flh0c3wAT3bSesIOqEGmyUA4JoKf/YTWy0XKOYAY7"
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.2/dist/purify.min.js"
-        integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh"
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
+<script src="marked.min.js"></script>
+<script src="purify.min.js"></script>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -229,7 +212,7 @@
   .preview-content h4::after,
   .preview-content h5::after,
   .preview-content h6::after {
-    content: ' ↘ H3 in Medium';
+    content: '↘ H3 in Medium';
     font-size: 10px;
     font-family: var(--sans);
     font-weight: 400;
@@ -305,6 +288,62 @@
     padding: 2px 8px;
     display: inline-block;
     margin-bottom: 12px;
+  }
+
+  /* ── Shared inline transform badge ──
+     Matches the ::after style on H4-H6 but as a real DOM element
+     so JS transforms can insert it (list flattening, task lists, etc.). */
+  .transform-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-family: var(--sans);
+    font-weight: 400;
+    font-style: normal;
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  /* ── Block-level placeholder for local images ── */
+  .medium-block-placeholder {
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 10px 14px;
+    margin: 8px 0 14px;
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-bdr);
+    border-radius: 7px;
+    color: var(--warn-text);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    line-height: 1.6;
+  }
+  .medium-block-placeholder code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-2);
+    background: none;
+    word-break: break-all;
+  }
+  .medium-block-placeholder .placeholder-meta {
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-style: italic;
+  }
+
+  /* ── Raw HTML blocks: tags stripped, text preserved ──
+     The left border signals that this content originated in an HTML block.
+     The badge (prepended by JS) explains what changed. */
+  .html-stripped-block {
+    border-left: 2px solid var(--warn-bdr);
+    padding-left: 12px;
+    margin: 8px 0 14px;
   }
 
   /* ── Footer warnings ── */
@@ -421,7 +460,7 @@
           <path d="M2 3h9M2 6.5h6M2 10h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </div>
-      Markdown → Medium
+      Markdown &rarr; Medium
     </div>
 
     <div class="toolbar-actions">
@@ -440,7 +479,7 @@
   <div class="main" id="main">
     <div class="pane" id="pane-editor">
       <div class="pane-label">Markdown</div>
-      <textarea id="md-input" spellcheck="false" aria-label="Markdown input" placeholder="Paste or type your Markdown here…"></textarea>
+      <textarea id="md-input" spellcheck="false" aria-label="Markdown input" placeholder="Paste or type your Markdown here&hellip;"></textarea>
     </div>
 
     <div class="pane" id="pane-preview">
@@ -463,12 +502,12 @@
 <div id="fallback-area" role="dialog" aria-modal="true" aria-labelledby="fb-title">
   <div class="fallback-box">
     <h2 id="fb-title">Clipboard access blocked</h2>
-    <p>Your browser blocked the clipboard write. The most reliable recovery is to open the rendered output in a new tab, then select all and copy from there — Medium will accept that as rich text.</p>
+    <p>Your browser blocked the clipboard write. The most reliable recovery is to open the rendered output in a new tab, then select all and copy from there &mdash; Medium will accept that as rich text.</p>
     <div class="fallback-actions">
       <button class="fallback-btn primary" onclick="openRenderedInNewTab()">Open rendered HTML in new tab</button>
       <button class="fallback-btn" onclick="toggleRawHtml()">Show raw HTML</button>
     </div>
-    <p style="font-size:12px;color:var(--text-3)">Raw HTML source is for debugging only — pasting it directly into Medium's editor will paste as plain text, not rich content.</p>
+    <p style="font-size:12px;color:var(--text-3)">Raw HTML source is for debugging only &mdash; pasting it directly into Medium's editor will paste as plain text, not rich content.</p>
     <textarea id="fallback-html" readonly onclick="this.select()"></textarea>
     <button class="fallback-close" onclick="closeFallback()">Close</button>
   </div>
@@ -485,7 +524,7 @@ Here's a blockquote:
 
 > "The best way to predict the future is to invent it." — Alan Kay
 
-### Third-Level Heading
+### Code Example
 
 Inline \`code\` and a fenced block:
 
@@ -495,26 +534,36 @@ function greet(name) {
 }
 \`\`\`
 
-## Lists
+## Nested Lists (flattened automatically)
 
-Unordered:
+Medium only supports one level of nesting. Items below will be flattened:
 
 - Item one
 - Item two
-  - Nested item
+  - Nested item A
+  - Nested item B
+    - Doubly nested item
 - Item three
 
-Ordered:
+## Task Lists (converted to plain bullets)
 
-1. First step
-2. Second step
-3. Third step
+- [x] Completed task
+- [ ] Incomplete task
+- [ ] Another task
 
 ## Images
 
-Images must be publicly hosted URLs — Medium fetches them by URL.
+A remote URL transfers fine:
 
 ![A sample image](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bikesgray.jpg/480px-Bikesgray.jpg)
+
+A local path gets a placeholder:
+
+![My diagram](./images/diagram.png)
+
+## Raw HTML (tags stripped, text kept)
+
+<div style="text-align: center; font-style: italic;">Mole has an icon on its GitHub page, so I took a screenshot and cropped it down.</div>
 
 ## Tables (⚠ Medium strips formatting)
 
@@ -525,10 +574,10 @@ Images must be publicly hosted URLs — Medium fetches them by URL.
 
 ---
 
-That's it. Paste this into Medium and it should carry over heading structure, bold/italic, links, images, code blocks, and lists.
+That's it. Paste into Medium and it should carry over heading structure, bold/italic, links, images, code blocks, and lists.
 `;
 
-// ── State ──
+// ── DOM refs ──
 const mdInput    = document.getElementById('md-input');
 const previewEl  = document.getElementById('preview');
 const chipsEl    = document.getElementById('warn-chips');
@@ -540,23 +589,178 @@ mdInput.value = SAMPLE;
 // ── Marked config ──
 marked.setOptions({ gfm: true, breaks: false });
 
-// ── Sanitize wrapper ──
-// Marked 5+ removed built-in HTML sanitization. We pipe everything through
-// DOMPurify so embedded <script>, on*= handlers, javascript: URLs, etc. are
-// stripped before they touch the DOM. This matters even for a single-user tool:
-// markdown copied from a hostile source could carry a script payload that
-// would otherwise execute in the file:// origin (network egress, clipboard
-// reads, fake UI for phishing).
-function safeRender(md) {
-  return DOMPurify.sanitize(marked.parse(md));
+// ─────────────────────────────────────────────
+// Core render ─ returns { html, placeholders }
+// ─────────────────────────────────────────────
+// We intercept raw HTML blocks via a custom marked renderer BEFORE DOMPurify
+// runs. Each block is replaced with a sentinel <div data-rawhtml="id"> whose
+// content is the INNER HTML of the block (wrapper tags stripped). DOMPurify
+// then sanitizes everything, including the sentinel's inner content.
+// Post-processing adds a badge in preview, or cleans up for copy output.
+//
+// DOMPurify config notes:
+//   data-rawhtml  — our sentinel attribute; must survive sanitization.
+//   input[checked/disabled] — needed for task-list checkboxes generated by
+//     marked's GFM parser. These are always disabled so they can't submit or
+//     exfiltrate; we read checked state then immediately remove the element.
+
+function renderToDOM(md) {
+  const placeholders = new Map();
+  let idx = 0;
+
+  const renderer = new marked.Renderer();
+  renderer.html = function(token) {
+    const id  = 'rawhtml-' + (idx++);
+    const raw = (token.raw || token.text || '').trim();
+    placeholders.set(id, raw);
+    // Extract inner content by stripping the outermost wrapper tag(s).
+    // A temporary div lets the browser parse the block; we grab the innerHTML
+    // of the single child element so that wrapper attributes (style, class,
+    // etc.) are dropped while the text and any inline markup are kept.
+    // Blocks with multiple root elements fall back to the full innerHTML.
+    const temp = document.createElement('div');
+    temp.innerHTML = raw;
+    const innerHtml = temp.children.length === 1
+      ? temp.children[0].innerHTML
+      : temp.innerHTML;
+    return '<div data-rawhtml="' + id + '">' + innerHtml + '</div>';
+  };
+
+  const rawHtml = marked.parse(md, { renderer });
+  const safeHtml = DOMPurify.sanitize(rawHtml, {
+    ADD_ATTR: ['data-rawhtml', 'checked', 'disabled'],
+    ADD_TAGS: ['input']
+  });
+
+  return { html: safeHtml, placeholders };
 }
 
-// ── Render ──
+// ─────────────────────────────────────────────
+// Transforms
+// ─────────────────────────────────────────────
+
+// makeBadge — shared badge element matching the H4::after pseudo-element style.
+function makeBadge(text) {
+  const b = document.createElement('span');
+  b.className = 'transform-badge';
+  b.textContent = text;
+  return b;
+}
+
+// convertTaskLists — strip <input type="checkbox"> from list items and replace
+// with a badge noting the original checked state. Must run before
+// flattenNestedLists so checkboxes are removed before nesting is resolved.
+function convertTaskLists(container, forCopy) {
+  container.querySelectorAll('li > input[type="checkbox"]').forEach(checkbox => {
+    const li      = checkbox.parentElement;
+    const checked = checkbox.hasAttribute('checked');
+    checkbox.remove();
+    if (!forCopy) li.prepend(makeBadge(checked ? '☑ was checked' : '☐ was unchecked'));
+  });
+}
+
+// flattenNestedLists — collapse all nested <ul>/<ol> to the top level.
+// Loops until no nested lists remain so arbitrary depth is handled in one pass.
+function flattenNestedLists(container, forCopy) {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    container.querySelectorAll('li > ul, li > ol').forEach(nested => {
+      changed = true;
+      const parentLi = nested.parentElement;
+      if (!forCopy) parentLi.appendChild(makeBadge('↘ nested list flattened'));
+      let insertAfter = parentLi;
+      Array.from(nested.children).forEach(item => {
+        if (!forCopy) item.appendChild(makeBadge('↘ was nested'));
+        insertAfter.after(item);
+        insertAfter = item;
+      });
+      nested.remove();
+    });
+  }
+}
+
+// replaceLocalImages — swap <img src="local/path"> for a placeholder box.
+// Remote URLs (http/https) and data URIs are left untouched.
+function replaceLocalImages(container, forCopy) {
+  container.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    if (/^https?:\/\//i.test(src) || /^data:/i.test(src)) return;
+    const alt = img.getAttribute('alt') || '';
+    if (forCopy) {
+      const p = document.createElement('p');
+      p.textContent = '[Image removed — local path not accessible to Medium: "' + src + '"' + (alt ? ' (alt: "' + alt + '")' : '') + ']';
+      img.replaceWith(p);
+    } else {
+      const p = document.createElement('p');
+      p.className = 'medium-block-placeholder';
+      p.appendChild(makeBadge('⚠ local image removed'));
+      const c = document.createElement('code'); c.textContent = src;
+      p.appendChild(c);
+      if (alt) {
+        const m = document.createElement('span');
+        m.className = 'placeholder-meta';
+        m.textContent = '· "' + alt + '"';
+        p.appendChild(m);
+      }
+      img.replaceWith(p);
+    }
+  });
+}
+
+// replaceRawHtmlBlocks — handle sentinel <div data-rawhtml="id"> elements.
+//
+// The sentinel's innerHTML is already the inner content of the original HTML
+// block (wrapper tags stripped, DOMPurify-sanitized). So we never lose the
+// author's text — we only drop the attributes and wrapper element.
+//
+// Preview: add a badge + left-border indicator; the text content is visible.
+// Copy:    replace the <div> with a <p> so Medium gets a clean paragraph.
+//          (Using a <p> rather than leaving a <div> avoids block-level
+//          nesting issues if Medium's paste handler is strict about structure.)
+function replaceRawHtmlBlocks(container, forCopy) {
+  container.querySelectorAll('[data-rawhtml]').forEach(el => {
+    el.removeAttribute('data-rawhtml');
+    if (forCopy) {
+      const p = document.createElement('p');
+      p.innerHTML = el.innerHTML;   // already sanitized by DOMPurify
+      el.replaceWith(p);
+    } else {
+      el.prepend(makeBadge('⚠ HTML tags stripped'));
+      el.classList.add('html-stripped-block');
+    }
+  });
+}
+
+// downgradeHeadings — H4-H6 → H3 (copy only; preview uses CSS ::after).
+function downgradeHeadings(div) {
+  div.querySelectorAll('h4,h5,h6').forEach(el => {
+    const h3 = document.createElement('h3');
+    h3.innerHTML = el.innerHTML;
+    el.replaceWith(h3);
+  });
+}
+
+// replaceTables — tables → plaintext notice (copy only; preview keeps the
+// rendered table plus a .table-warn label directly below it).
+function replaceTables(div) {
+  div.querySelectorAll('table').forEach(tbl => {
+    const p = document.createElement('p');
+    p.textContent = '[Table removed — Medium does not support table formatting. Consider rewriting as a list.]';
+    tbl.replaceWith(p);
+  });
+}
+
+// ─────────────────────────────────────────────
+// Render (preview)
+// ─────────────────────────────────────────────
+
 function render() {
   const md = mdInput.value;
-  previewEl.innerHTML = safeRender(md);
+  const { html, placeholders } = renderToDOM(md);
+  previewEl.innerHTML = html;
 
-  // Insert table warnings in preview
+  // Table warning labels (preview only — tables remain visible so you can read them)
   previewEl.querySelectorAll('table').forEach(tbl => {
     const w = document.createElement('p');
     w.className = 'table-warn';
@@ -564,32 +768,45 @@ function render() {
     tbl.after(w);
   });
 
+  // Visual transforms with badges. Order matters:
+  //   1. convertTaskLists first — reads checkbox state before flattenNestedLists moves items
+  //   2. flattenNestedLists — normalises list structure
+  //   3. replaceLocalImages — swaps broken <img> for placeholder boxes
+  //   4. replaceRawHtmlBlocks — adds badge + border to stripped HTML blocks
+  convertTaskLists(previewEl, false);
+  flattenNestedLists(previewEl, false);
+  replaceLocalImages(previewEl, false);
+  replaceRawHtmlBlocks(previewEl, false);
+
   updateChips(md);
   updateWordCount();
 }
 
-// Word count is now derived from the rendered text, so markdown syntax
-// characters (#, **, -, etc.) don't inflate the number.
+// Word count is derived from rendered text so Markdown syntax characters
+// (#, **, -, etc.) don't inflate the number. Reading time uses 265 wpm
+// (widely cited average for adult silent reading of online text).
 function updateWordCount() {
-  const text = (previewEl.textContent || '').trim();
+  const text  = (previewEl.textContent || '').trim();
   const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-  wordCount.textContent = words > 0 ? `${words.toLocaleString()} words` : '';
+  if (words === 0) { wordCount.textContent = ''; return; }
+  const mins = Math.max(1, Math.ceil(words / 265));
+  wordCount.textContent = words.toLocaleString() + ' words · ~' + mins + ' min read';
 }
 
 function updateChips(md) {
   const issues = [];
   if (/^\|.+\|/m.test(md))
-    issues.push('Tables → plain text in Medium');
+    issues.push('Tables → removed');
   if (/^#{4,6} /m.test(md))
-    issues.push('H4–H6 → collapsed to H3');
+    issues.push('H4–H6 → H3');
   if (/^([ \t]{2,})([-*+]|\d+[.)]) /m.test(md))
-    issues.push('Nested lists → flattened to one level by Medium');
+    issues.push('Nested lists → flattened');
+  if (/^[ \t]*[-*+] \[[ x]\] /mi.test(md))
+    issues.push('Task lists → plain bullets');
   if (/!\[.*?\]\((?!https?:\/\/)[^)]+\)/m.test(md))
-    issues.push('Local image paths won\'t display');
-  if (/<[a-z][^>]*>/i.test(md))
-    issues.push('Raw HTML tags are stripped');
-  // Issue strings are hardcoded so innerHTML is safe here, but use textContent
-  // via DOM construction to keep the pattern resistant to future edits.
+    issues.push('Local images → placeholder');
+  if (/^<[a-zA-Z]/m.test(md))
+    issues.push('Raw HTML → tags stripped, text kept');
   chipsEl.replaceChildren(...issues.map(t => {
     const span = document.createElement('span');
     span.className = 'chip';
@@ -598,27 +815,24 @@ function updateChips(md) {
   }));
 }
 
-// ── Transform for Medium clipboard ──
+// ─────────────────────────────────────────────
+// Build clipboard HTML
+// ─────────────────────────────────────────────
+
 function buildMediumHtml(md) {
-  // Sanitize FIRST, then transform. After DOMPurify, headings and tables
-  // are still valid HTML so the H4→H3 and table→note rewrites work normally.
-  const raw = DOMPurify.sanitize(marked.parse(md));
+  // Re-render from source so this pass has its own fresh placeholders map,
+  // independent of whatever the preview last rendered.
+  const { html } = renderToDOM(md);
   const div = document.createElement('div');
-  div.innerHTML = raw;
+  div.innerHTML = html;
 
-  // H4-H6 → H3
-  div.querySelectorAll('h4,h5,h6').forEach(el => {
-    const h3 = document.createElement('h3');
-    h3.innerHTML = el.innerHTML;
-    el.replaceWith(h3);
-  });
-
-  // Tables → explanatory line
-  div.querySelectorAll('table').forEach(tbl => {
-    const p = document.createElement('p');
-    p.textContent = '[Table not shown — Medium does not support table formatting. Consider rewriting as a list.]';
-    tbl.replaceWith(p);
-  });
+  // Structural transforms (clean output, no badges)
+  downgradeHeadings(div);
+  replaceTables(div);
+  convertTaskLists(div, true);
+  flattenNestedLists(div, true);
+  replaceLocalImages(div, true);
+  replaceRawHtmlBlocks(div, true);
 
   // Blockquotes: marked's output has whitespace text nodes between the
   // <blockquote> opening tag, the inner <p>s, and the closing tag. Medium's
@@ -646,12 +860,8 @@ function buildMediumHtml(md) {
   // Marked pretty-prints its output with newlines between top-level blocks;
   // those become whitespace text nodes in the DOM and survive serialization
   // back through innerHTML. Medium's paste handler reads each one as an empty
-  // paragraph block — which is why a paste used to drop a "graf--empty" ghost
-  // <blockquote> in immediately after a real blockquote (visible in DevTools
-  // as the cause of the trailing gap inside the quote bar).
-  // The set is intentionally conservative: only elements whose children are
-  // guaranteed to be other blocks. Inside <p>, <li>, <td>, headings, the
-  // whitespace between inline elements like <em> and <a> is meaningful.
+  // paragraph block — which is why a paste used to drop a ghost empty
+  // blockquote immediately after a real one.
   const BLOCK_CONTAINERS = new Set([
     'DIV','BLOCKQUOTE','UL','OL','TABLE','THEAD','TBODY','TR',
     'ARTICLE','SECTION','HEADER','FOOTER','MAIN','ASIDE','FIGURE'
@@ -755,11 +965,9 @@ ${html}
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
   if (!win) {
-    // Popup blocked — keep the modal open so the raw-HTML option is still reachable.
     alert('Popup blocked. Allow popups for this page, or use "Show raw HTML" below.');
     return;
   }
-  // Revoke after a delay so the new tab has time to load.
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
   closeFallback();
 }
@@ -803,11 +1011,8 @@ mdInput.addEventListener('input', () => {
 
 // ── Synced scrolling ──
 // Proportional sync: whichever pane the user scrolls drives the other to the
-// same fractional position. This won't perfectly align headings with their
-// rendered counterparts (the editor and preview have different content
-// heights), but it's close enough for most documents and costs ~15 lines.
-// A `syncing` flag breaks the feedback loop that would otherwise occur when
-// scrolling B fires B's scroll event and tries to scroll A back.
+// same fractional position. A `syncing` flag breaks the feedback loop that
+// would otherwise occur when scrolling B fires B's scroll event.
 const previewScroller = document.querySelector('.preview-scroll');
 let syncing = false;
 
@@ -815,7 +1020,7 @@ function syncScroll(src, dst) {
   if (syncing) return;
   const srcMax = src.scrollHeight - src.clientHeight;
   const dstMax = dst.scrollHeight - dst.clientHeight;
-  if (srcMax <= 0 || dstMax <= 0) return; // nothing to sync to
+  if (srcMax <= 0 || dstMax <= 0) return;
   syncing = true;
   dst.scrollTop = (src.scrollTop / srcMax) * dstMax;
   requestAnimationFrame(() => { syncing = false; });
@@ -830,8 +1035,7 @@ document.getElementById('fallback-area').addEventListener('click', function(e) {
 });
 
 // Keyboard shortcut: Cmd/Ctrl+Shift+C to copy.
-// Note: this overrides Chrome/Firefox's "inspect element" shortcut while this
-// page has focus. Skip during IME composition.
+// Skip during IME composition to avoid interrupting CJK input.
 document.addEventListener('keydown', e => {
   if (e.isComposing) return;
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'C' || e.key === 'c')) {

@@ -1,69 +1,65 @@
-# Markdown → Medium
+# “Markdown → Medium” Tool
 
-A single-file tool for drafting articles in Markdown and pasting them into Medium with formatting intact.
+Moving Markdown text into Medium can be a tedious process. Medium uses a bespoke What You See Is What You Get (WYSIWYG) editor that doesn’t translate Markdown syntax. After manually reformatting my first Medium post, I decided there had to be a better way. With LLM assistance, I created **Markdown → Medium**, which I am offering for free.
 
-## Setup
+## What It Is
 
-1. Open `md-to-medium.html` in any modern browser. No install needed — everything runs locally.
-2. First load needs internet to fetch two scripts (marked and DOMPurify) from jsDelivr. After that, your browser caches them.
-3. On first open you'll see sample markdown demonstrating the supported syntax. Select all and delete to start fresh.
+Markdown → Medium is a simple tool for converting Markdown files to a format that can be pasted directly into the Medium.com editor, requiring only minimal formatting changes there. It opens as a web page in a browser, but does not require an internet connection to function.
 
-## The interface
+## Requirements
 
-Two panes:
+**The tool consists of three files**; all three files must be saved in the same folder to function:
 
-- **Left:** Markdown editor. Type or paste your draft.
-- **Right:** Live preview. Updates ~200ms after you stop typing.
+- marked.min.js
+- md-to-medium.html
+- purify.min.js
 
-Across the top:
+**Markdown → Medium runs in a web browser**: 
 
-- **Split / Editor / Preview** — toggle the view mode.
-- **Copy for Medium** — copies the rendered output as rich text, ready to paste into Medium.
+- *Chrome* browsers work most reliably. I recommend *[Brave](https://brave.com/download/)* (`brew install --cask brave-browser`) or *[Ungoogled Chromium](https://ungoogled-software.github.io/ungoogled-chromium-binaries/)* (`brew install --cask ungoogled-chromium`).
+- *Safari* and *Firefox* both work in my testing. I currently use *[Zen](https://zen-browser.app/download/)* (`brew install --cask zen`). If you have trouble using either Firefox or Safari, try a *Chrome-based* browser.
 
-Across the bottom:
+## Interface
 
-- **Warning chips** flag anything Medium won't handle cleanly (see below).
-- **Word count** is derived from the rendered preview, so markdown syntax doesn't inflate the number.
+![md_to_medium-interface](./images/md_to_medium-interface.png)
 
 ## Workflow
 
-1. Write or paste your markdown.
-2. Glance at the warning chips — anything there flags compatibility issues.
-3. Click **Copy for Medium** (or press **Cmd/Ctrl+Shift+C**).
-4. In Medium's editor, paste. Formatting carries over.
+1. Open **md-to-medium.html** in a web browser.
+2. Copy the plaintext Markdown from your editor and paste it into the left Editor pane.
+3. **Warning Badges** appear inline in the Preview pane to alert you when unsupported elements are changed (see “Limitations” below). **Warning Flags** in the bottom bar collect all Warning Badges in one place for reference.
+4. Once you have reviewed any warnings and made any necessary changes, click the “**Copy for Medium**” button to copy the result to the clipboard.
+5. Paste (`Cmd/Ctrl+v`) into Medium’s editor. Warning Badges do not carry over, but local image placeholders will show in the editor to make replacing them easier.
 
-## What translates cleanly
+## Limitations
 
-- Headings: H1, H2, H3
-- Bold and italic
-- Links
-- Inline code and fenced code blocks
-- Blockquotes
-- Bulleted and numbered lists, including nested
-- Images — but only when hosted at a public URL
-- Horizontal rules
+The following features are not supported by the Medium editor:
 
-## What doesn't translate, and what to do about it
+- **Tables**—Tables are not supported; Medium will strip the table formatting. You will need to reformat tables as lists or replace them with images.
+- **Nested list items and task items**—The Medium editor only supports simple lists with one level. All nested items will be promoted to top-level items, and task items will be changed to regular bullets.
+- **Headers beyond H3**—Only H1, H2, and H3 are supported. Headers `####`+ are collapsed to `###`.
+- **Local images**—Images hosted locally will not upload automatically and will need to be added in the Medium editor. Images linked online will be retained.
+- **Raw HTML markup**—Elements such as `<div>` and `<span>` are not supported and will be stripped.
+- **Empty lines after blockquotes**—Medium’s editor adds an extra empty line at the end of blockquotes. This is a quirk of the editor.
 
-The bottom-bar chips warn you when these appear in your draft:
+## List of Markdown Elements and Support
 
-- **H4–H6 headings** get auto-collapsed to H3 in the copy. Medium doesn't support deeper levels.
-- **Tables** are replaced with a placeholder line. Medium strips table formatting entirely. Rewrite as a list, or capture the table as an image.
-- **Nested lists** get flattened to a single level by Medium on paste. This is a Medium platform limitation, not something the tool can fix. If you need a visual hierarchy, the common workaround is to use `Shift+Enter` and an em dash inside Medium's editor after pasting.
-- **Empty line after blockquotes** — Medium's editor inserts an empty quote line immediately after every blockquote on paste. This is a Medium platform behavior, not something the tool can prevent. After pasting, click into the empty line and press Backspace once to remove it.
-- **Local image paths** like `![alt](image.png)` won't display. Upload the image somewhere public first, then link to the URL.
-- **Raw HTML tags** in your markdown are stripped during sanitization. Medium would ignore them anyway.
+- **Paragraphs** = Fully supported
+- **Bold/Italic** `**text**`/`*text*` = Fully supported
+- **Links** `[text](url)` = Fully supported
+- **Headings H1–H3** `#`, `##`, `###` = Fully supported
+- **Headings H4+** `####+` = Collapsed into H3 `###`
+- **Unordered/Ordered Lists** `- Text`/`1. Text` = Fully supported (one level only)
+- **Images, local** `![alt text](file/path.ext)` = Replaced with placeholder (alt text is preserved)
+- **Images, remote** `![alt text](https://...)` = Fetched by Medium editor
+- **Blockquotes** `> Text` = Fully supported
+- **Inline Code/Code Blocks** = Fully supported
+- **Horizontal Rules** `---` = Becomes a divider (blank line with three dots)
+- **Tables** = Not supported by Medium editor; table formatting stripped
 
-## If the copy button fails
+## Important Notes
 
-Some browsers block clipboard writes on `file://` pages. If that happens, a popup will appear in the middle of the screen with two buttons:
-
-- **Open rendered HTML in new tab** *(recommended)* — click this. A new browser tab opens with your article rendered cleanly. Press Cmd/Ctrl+A to select all, Cmd/Ctrl+C to copy, then switch to Medium and paste as normal.
-- **Show raw HTML** — for debugging only. Pasting raw HTML source into Medium gives you plain text, not rich content.
-
-## A few things worth knowing
-
-- **Synced scrolling** works in both directions. It's proportional rather than line-perfect, so very long documents may drift slightly between panes.
-- **The preview matches the copy.** What you see, including the H4-collapse warnings and table replacements, is exactly what gets copied to your clipboard.
-- **Your content stays local.** The tool itself doesn't transmit your markdown anywhere. The only network calls are the two script fetches on first load.
-- **Sanitization is automatic.** Embedded scripts, event handlers, and `javascript:` URLs are stripped before they touch the preview, so pasting markdown from an untrusted source is safe.
+- Your content stays local; all processing is done on your device.
+- The tool automatically sanitizes JavaScript, event handlers, and other potentially unsafe elements.
+- The word count is based on the rendered text; it does not count the Markdown syntax.
+- The reading time is based on an average reading speed of 265 words per minute.

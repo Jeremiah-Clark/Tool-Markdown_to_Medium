@@ -37,6 +37,7 @@
 *.afdesign-preview
 *.afphoto-preview
 *.afpub-preview
+*.af
 
 ## Template files
 # These lines are commented out by default, meaning the template files
