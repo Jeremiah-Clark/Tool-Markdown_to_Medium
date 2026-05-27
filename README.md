@@ -14,6 +14,8 @@ Markdown → Medium is a simple tool for converting Markdown files to a format t
 - md-to-medium.html
 - purify.min.js
 
+Download all three files (or the **Markdown_to_Medium.zip** file) into the same folder.
+
 **Markdown → Medium runs in a web browser**: 
 
 - *Chrome* browsers work most reliably. I recommend *[Brave](https://brave.com/download/)* (`brew install --cask brave-browser`) or *[Ungoogled Chromium](https://ungoogled-software.github.io/ungoogled-chromium-binaries/)* (`brew install --cask ungoogled-chromium`).
@@ -25,12 +27,11 @@ Markdown → Medium is a simple tool for converting Markdown files to a format t
 
 ## Workflow
 
-1. Download the three files listed above (or the **Markdown_to_Medium.zip** file and extract into the same folder).
-2. Open **md-to-medium.html** in a web browser.
-3. Copy the plaintext Markdown from your editor and paste it into the left Editor pane.
-4. **Warning Badges** appear inline in the Preview pane to alert you when unsupported elements are changed (see “Limitations” below). **Warning Flags** in the bottom bar collect all Warning Badges in one place for reference.
-5. Once you have reviewed any warnings and made any necessary changes, click the “**Copy for Medium**” button to copy the result to the clipboard.
-6. Paste (`Cmd/Ctrl+v`) into Medium’s editor. Warning Badges do not carry over, but local image placeholders will show in the editor to make replacing them easier.
+1. Open **md-to-medium.html** in a web browser.
+2. Copy the plaintext Markdown from your editor and paste it into the left Editor pane.
+3. **Warning Badges** appear inline in the Preview pane to alert you when unsupported elements are changed (see “Limitations” below). **Warning Flags** in the bottom bar collect all Warning Badges in one place for reference.
+4. Once you have reviewed any warnings and made any necessary changes, click the “**Copy for Medium**” button to copy the result to the clipboard.
+5. Paste (`Cmd/Ctrl+v`) into Medium’s editor. Warning Badges do not carry over, but local image placeholders will show in the editor to make replacing them easier.
 
 ## Limitations
 
