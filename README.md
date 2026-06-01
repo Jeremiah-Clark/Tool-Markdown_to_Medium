@@ -15,9 +15,9 @@ Markdown → Medium is a simple tool for converting Markdown files to a format t
 
 All three files must be saved in the same folder to function:
 
-- marked.min.js
-- md-to-medium.html
-- purify.min.js
+- **md-to-medium.html**—The primary file containing the UI and core functionality.
+- **marked.min.js**—A JavaScript library that handles Markdown syntax.
+- **purify.min.js**—A JavaScript library that sanitizes input text.
 
 The **Markdown_to_Medium.zip** file contains these three files, plus a PDF of this README.
 
