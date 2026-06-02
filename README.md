@@ -60,6 +60,7 @@ The following features are not supported by the Medium editor:
 - **Images, local** `![alt text](file/path.ext)` = Replaced with placeholder (alt text is preserved)
 - **Images, remote** `![alt text](https://...)` = Fetched by Medium editor
 - **Blockquotes** `> Text` = Fully supported
+- **Lists Within Blockquotes** `> - Text` = Not supported by Medium editor; blockquote markup stripped
 - **Inline Code/Code Blocks** = Fully supported
 - **Horizontal Rules** `---` = Becomes a divider (blank line with three dots)
 - **Tables** = Not supported by Medium editor; table formatting stripped
