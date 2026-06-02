@@ -212,7 +212,7 @@
   .preview-content h4::after,
   .preview-content h5::after,
   .preview-content h6::after {
-    content: '↘ H3 in Medium';
+    content: '↘ Subheading in Medium';
     font-size: 10px;
     font-family: var(--sans);
     font-weight: 400;
@@ -520,9 +520,15 @@ An opening paragraph with **bold text**, *italics*, and a [hyperlink](https://ex
 
 ## A Second-Level Heading
 
-Here's a blockquote:
+Here's a simple blockquote:
 
 > "The best way to predict the future is to invent it." — Alan Kay
+
+And a blockquote containing a list (list will be moved out):
+
+> Key points:
+> - Lists inside blockquotes are not supported by Medium
+> - This list will be extracted and placed after the quote
 
 ### Code Example
 
@@ -732,12 +738,27 @@ function replaceRawHtmlBlocks(container, forCopy) {
   });
 }
 
-// downgradeHeadings — H4-H6 → H3 (copy only; preview uses CSS ::after).
+// downgradeHeadings — remaps headings for Medium's paste handler.
+// Medium maps <h2> → Heading and <h4> → Subheading. H3 must therefore
+// become h4 so Medium treats it as Subheading rather than Heading.
+// H5/H6 also collapse to h4. H2 is left unchanged.
+// Preview uses CSS ::after badges without touching the DOM.
 function downgradeHeadings(div) {
-  div.querySelectorAll('h4,h5,h6').forEach(el => {
-    const h3 = document.createElement('h3');
-    h3.innerHTML = el.innerHTML;
-    el.replaceWith(h3);
+  div.querySelectorAll('h3,h5,h6').forEach(el => {
+    const h4 = document.createElement('h4');
+    h4.innerHTML = el.innerHTML;
+    el.replaceWith(h4);
+  });
+}
+
+// extractBlockquoteLists — pull list elements out of blockquotes.
+// Medium's editor does not support list formatting inside a blockquote.
+// Lists are moved to immediately after the containing blockquote.
+function extractBlockquoteLists(container, forCopy) {
+  container.querySelectorAll('blockquote ul, blockquote ol').forEach(list => {
+    const bq = list.closest('blockquote');
+    if (!forCopy) list.prepend(makeBadge('\u2198 moved out of blockquote'));
+    bq.after(list);
   });
 }
 
@@ -770,10 +791,12 @@ function render() {
 
   // Visual transforms with badges. Order matters:
   //   1. convertTaskLists first — reads checkbox state before flattenNestedLists moves items
-  //   2. flattenNestedLists — normalises list structure
-  //   3. replaceLocalImages — swaps broken <img> for placeholder boxes
-  //   4. replaceRawHtmlBlocks — adds badge + border to stripped HTML blocks
+  //   2. extractBlockquoteLists — moves lists out of blockquotes before flattening
+  //   3. flattenNestedLists — normalises list structure
+  //   4. replaceLocalImages — swaps broken <img> for placeholder boxes
+  //   5. replaceRawHtmlBlocks — adds badge + border to stripped HTML blocks
   convertTaskLists(previewEl, false);
+  extractBlockquoteLists(previewEl, false);
   flattenNestedLists(previewEl, false);
   replaceLocalImages(previewEl, false);
   replaceRawHtmlBlocks(previewEl, false);
@@ -798,7 +821,9 @@ function updateChips(md) {
   if (/^\|.+\|/m.test(md))
     issues.push('Tables → removed');
   if (/^#{4,6} /m.test(md))
-    issues.push('H4–H6 → H3');
+    issues.push('H4+ → Subheading');
+  if (/^> *(?:[-*+]|\d+[.)]) /m.test(md))
+    issues.push('Lists in blockquotes → moved out');
   if (/^([ \t]{2,})([-*+]|\d+[.)]) /m.test(md))
     issues.push('Nested lists → flattened');
   if (/^[ \t]*[-*+] \[[ x]\] /mi.test(md))
@@ -830,6 +855,7 @@ function buildMediumHtml(md) {
   downgradeHeadings(div);
   replaceTables(div);
   convertTaskLists(div, true);
+  extractBlockquoteLists(div, true);
   flattenNestedLists(div, true);
   replaceLocalImages(div, true);
   replaceRawHtmlBlocks(div, true);
